@@ -241,7 +241,7 @@ nav {
   width: 100%;
   max-width: 608px;
   /* Keep all three cards pinned while Contact reveals over the stack. */
-  padding-bottom: 150vh;
+  padding-bottom: 110vh;
 }
 
 .credentials-sticky h1{
