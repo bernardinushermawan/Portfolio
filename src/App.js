@@ -2,7 +2,7 @@ import profilePicture from './profilePicture.png';
 import sideButton from'./sideButton.png';
 import './App.css';
 import {motion, useScroll, useTransform, AnimatePresence} from 'framer-motion';
-import { useRef, useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import { ReactLenis } from "lenis/react";
 
 function App() {
@@ -49,22 +49,51 @@ function App() {
   const ref = useRef(null);
   const { scrollYProgress } = useScroll({
     target: ref,
-    offset: ["start start", "end start"]
+    offset: ["start end", "start start"],
+    trackContentSize: true
   });
   
-  const aboutOpacity = useTransform(scrollYProgress, [0, 0.2], [1, 0]);
-  const aboutScale = useTransform(scrollYProgress, [0, 0.2], [1, 0.8]);
+  const aboutOpacity = useTransform(scrollYProgress, [0, 1], [1, 0]);
+  const aboutScale = useTransform(scrollYProgress, [0, 1], [1, 0.8]);
 
   // --- PROJECTS SECTION SCROLL ANIMATIONS ---
   const projectsRef = useRef(null);
+  const projectsViewportRef = useRef(null);
+  const projectsTrackRef = useRef(null);
+  const [projectsLayout, setProjectsLayout] = useState({ distance: 0, height: 0 });
+
+  useLayoutEffect(() => {
+    const viewport = projectsViewportRef.current;
+    const track = projectsTrackRef.current;
+    const measure = () => {
+      const distance = Math.max(0, track.scrollWidth - viewport.clientWidth);
+      const height = viewport.clientHeight + distance / 0.9;
+      setProjectsLayout((previous) =>
+        previous.distance === distance && previous.height === height
+          ? previous
+          : { distance, height }
+      );
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(viewport);
+    observer.observe(track);
+    window.addEventListener('resize', measure);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', measure);
+    };
+  }, []);
+
   const { scrollYProgress: projectsScrollProgress } = useScroll({
     target: projectsRef,
-    offset: ["start start", "end end"] 
+    offset: ["start start", "end end"],
+    trackContentSize: true
   });
-  const projectsX = useTransform(projectsScrollProgress, [0.1, 1], ["0vw", "-120vw"]);
+  const projectsX = useTransform(projectsScrollProgress, [0.1, 1], [0, -projectsLayout.distance]);
 
   return (
-    <main ref={ref} className="relative min-h-screen">
+    <main className="relative min-h-screen">
       <ReactLenis root>
 
         <nav id="navbar">
@@ -140,14 +169,15 @@ function App() {
           </motion.div>
         </div>
 
-        <div className="transition"></div>
+        <div ref={ref} className="transition"></div>
         
-        {/* FIXED: Passed projectsRef to the project container below so the useScroll target is registered! */}
-        <div id="projects-section" ref={projectsRef} className="project">
+        <div id="projects-section" ref={projectsRef} className="project"
+          style={{ '--projects-height': `${projectsLayout.height}px` }}>
           <div className="project-title"><h1>PROJECTS</h1></div>
-          <div className="projects-sticky">
+          <div ref={projectsViewportRef} className="projects-sticky">
             <motion.div 
               id="projects-track-list"
+              ref={projectsTrackRef}
               className="projects-track"
               style={{ 
                 x: projectsX 
@@ -261,7 +291,7 @@ function App() {
 
               {/* Card 1*/}
               <motion.div 
-                id="cred-card-2"
+                id="cred-card-1"
                 className="credential-card education"
                 whileHover={{ scale: 1.03, y: -5 }}
                 transition={{ type: "spring", stiffness: 300 }}
@@ -326,15 +356,6 @@ function App() {
                     <div className="divider"></div>
                     <p className="desc">The DevOps, DataOps, MLOps course from Duke University on Coursera teaches learners how to automate the lifecycle of software, data, and machine learning models by building end-to-end production pipelines using tools like Python, Rust, and Docker.</p>
                   </div>
-                </motion.div>
-
-                {/* Card 4: Achievements / Hackathons */}
-                <motion.div 
-                  id="cred-card-4"
-                  className="credential-card achievement"
-                  whileHover={{ scale: 1.03, y: -5 }}
-                  transition={{ type: "spring", stiffness: 300 }}
-                >
                 </motion.div>
 
             </div> 
